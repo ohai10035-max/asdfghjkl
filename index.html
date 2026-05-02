@@ -45,6 +45,7 @@
         header h1 { font-size: 18px; font-weight: 300; letter-spacing: 4px; outline: none; }
         header p { font-size: 9px; color: var(--text-light); letter-spacing: 2px; margin-top: 5px; outline: none; }
 
+        /* 找回：店主介绍 */
         .intro-box { margin-bottom: 35px; }
         .intro-title { font-size: 11px; font-weight: 600; margin-bottom: 5px; outline: none; }
         .intro-text { font-size: 10px; color: var(--text-light); line-height: 1.6; outline: none; }
@@ -72,10 +73,12 @@
         .price-val { font-size: 11px; font-weight: 500; outline: none; }
         .price-sub { font-size: 9px; color: var(--accent-color); outline: none; margin-top: 1px; }
 
+        /* 找回：碎碎念模块 */
         .benefit-box { margin-top: auto; padding-top: 30px; border-top: 1px dashed #eee; }
         .benefit-title { font-size: 10px; font-weight: 600; margin-bottom: 8px; outline: none; color: var(--accent-color); }
         .benefit-content { font-size: 9px; color: var(--text-light); line-height: 1.8; outline: none; }
 
+        /* 控制台与开关 */
         .controls-dock {
             position: fixed; bottom: 30px; background: #222; padding: 10px 20px;
             border-radius: 50px; display: flex; align-items: center; gap: 12px;
@@ -96,6 +99,7 @@
 
         .c-btn { background: white; color: #222; border: none; padding: 8px 14px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: bold; }
 
+        /* 统一美化弹窗 */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;
@@ -119,7 +123,7 @@
         .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
     </style>
 </head>
-<body>
+<body class="edit-on">
 
     <div id="menu-canvas">
         <header>
@@ -129,7 +133,7 @@
 
         <div class="intro-box">
             <div class="intro-title" contenteditable="true">ABOUT ME / 店主介绍</div>
-            <div class="intro-text" contenteditable="true">这里是雨花的小店。</div>
+            <div class="intro-text" contenteditable="true">这里是雨花的小店，点击开关即可进入编辑模式OvO。</div>
         </div>
 
         <div id="list-root">
@@ -151,7 +155,7 @@
                         </div>
                         <div class="price-info">
                             <div class="price-val" contenteditable="true">自定义价格</div>
-                            <div class="price-sub" contenteditable="true">自定义优惠价格</div>
+                            <div class="price-sub" contenteditable="true">自定义优惠价格（删除里面的字就不显示）</div>
                         </div>
                     </div>
                 </div>
@@ -171,7 +175,7 @@
     <div class="controls-dock">
         <div class="switch-wrap">
             编辑
-            <input type="checkbox" id="editToggle" class="toggle-input" onchange="handleModeChange()">
+            <input type="checkbox" id="editToggle" class="toggle-input" checked onchange="handleModeChange()">
         </div>
         <button class="c-btn edit-only" onclick="addNewCat()">+分类</button>
         <button class="c-btn" onclick="toggleFontModal()">字体管理</button>
@@ -195,142 +199,6 @@
             <div id="modal-content"></div>
             <div class="btn-row">
                 <button class="c-btn" style="background:#eee" onclick="closeCommonModal()">取消</button>
-                <button class="c-btn" style="background:var(--add-color);color:white" id="modal-confirm-btn">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let db;
-        let selectedId = localStorage.getItem('active_font_id') || 'default';
-        const dbReq = indexedDB.open("FontMemory", 1);
-        dbReq.onupgradeneeded = e => e.target.result.createObjectStore("fonts", {keyPath:"id"});
-        dbReq.onsuccess = e => { db = e.target.result; refreshFontPool(); };
-
-        async function registerFontFace(id, dataUrl) {
-            try {
-                const font = new FontFace(id, `url(${dataUrl})`, { display: 'swap' });
-                const loaded = await font.load();
-                document.fonts.add(loaded);
-                return true;
-            } catch (err) { return false; }
-        }
-
-        function refreshFontPool() {
-            const tx = db.transaction("fonts", "readonly");
-            tx.objectStore("fonts").getAll().onsuccess = async (e) => {
-                const list = e.target.result;
-                for (let f of list) await registerFontFace(f.id, f.data);
-                renderUI(list);
-                applyToVariables();
-            };
-        }
-
-        function renderUI(list) {
-            const container = document.getElementById('font-list');
-            let html = `<div class="font-item-container ${selectedId==='default'?'active':''}" onclick="switchTheme('default')"><div class="font-info">系统默认</div></div>`;
-            list.forEach(f => {
-                html += `<div class="font-item-container ${selectedId===f.id?'active':''}">
-                    <div class="font-info" style="font-family:'${f.id}'" onclick="switchTheme('${f.id}')">${f.name}</div>
-                    <div style="display:flex">
-                        <svg class="f-icon" onclick="openRename('${f.id}','${f.name}',event)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        <svg class="f-icon" style="stroke:var(--del-color)" onclick="confirmDelete('${f.id}',event)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        function applyToVariables() {
-            const fontStack = selectedId === 'default' ? `"PingFang SC", sans-serif` : `"${selectedId}"`;
-            document.documentElement.style.setProperty('--custom-font', fontStack);
-        }
-
-        function switchTheme(id) { selectedId = id; localStorage.setItem('active_font_id', id); refreshFontPool(); }
-
-        function importFont(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                const tx = db.transaction("fonts", "readwrite");
-                tx.objectStore("fonts").add({id: 'f_'+Date.now(), name: file.name.split('.')[0], data: e.target.result});
-                tx.oncomplete = () => { refreshFontPool(); input.value = ''; };
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function showModal(title, contentHtml, onConfirm) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-content').innerHTML = contentHtml;
-            const modal = document.getElementById('common-modal');
-            modal.style.display = 'flex';
-            document.getElementById('modal-confirm-btn').onclick = onConfirm;
-        }
-        function closeCommonModal() { document.getElementById('common-modal').style.display = 'none'; }
-
-        function openRename(id, oldName, e) {
-            e.stopPropagation();
-            const html = `<input type="text" id="modal-input" class="input-box" value="${oldName}">`;
-            showModal("重命名主题", html, () => {
-                const newName = document.getElementById('modal-input').value;
-                const tx = db.transaction("fonts", "readwrite");
-                const store = tx.objectStore("fonts");
-                store.get(id).onsuccess = ev => {
-                    const data = ev.target.result; data.name = newName; store.put(data);
-                    tx.oncomplete = () => { refreshFontPool(); closeCommonModal(); };
-                };
-            });
-        }
-
-        function confirmDelete(id, e) {
-            e.stopPropagation();
-            const html = `<div class="modal-tip">确定要删除这个字体吗？</div>`;
-            showModal("确认删除", html, () => {
-                const tx = db.transaction("fonts", "readwrite");
-                tx.objectStore("fonts").delete(id);
-                if(selectedId === id) switchTheme('default');
-                tx.oncomplete = () => { refreshFontPool(); closeCommonModal(); };
-            });
-        }
-
-        function toggleFontModal() {
-            const m = document.getElementById('font-modal');
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        function handleModeChange() { document.body.classList.toggle('edit-on', document.getElementById('editToggle').checked); }
-        
-        function addNewCat() {
-            const root = document.getElementById('list-root');
-            const div = document.createElement('div');
-            div.className = 'category-group';
-            div.innerHTML = `<div class="category-header"><div class="category-name" contenteditable="true">新分类名称</div><div class="category-line"></div><div class="edit-only"><span class="btn-action btn-add-item" onclick="addItemTo(this)">＋新增商品</span><span class="btn-action btn-del-cat" onclick="this.parentElement.parentElement.parentElement.remove()">×删除分类</span></div></div><div class="items-container"></div>`;
-            root.appendChild(div); addItemTo(div.querySelector('.btn-add-item'));
-        }
-        function addItemTo(btn) {
-            const container = btn.parentElement.parentElement.nextElementSibling;
-            const div = document.createElement('div');
-            div.className = 'item-row';
-            div.innerHTML = `<span class="row-del-mark edit-only" onclick="this.parentElement.remove()">×</span><div class="item-content"><span class="item-title" contenteditable="true">新商品项目</span><span class="item-desc" contenteditable="true">描述内容</span></div><div class="price-info"><div class="price-val" contenteditable="true">¥0</div><div class="price-sub" contenteditable="true">会员 ¥0</div></div>`;
-            container.appendChild(div);
-        }
-
-        function exportImg() {
-            document.getElementById('editToggle').checked = false; handleModeChange();
-            const btn = document.querySelector('.save-btn');
-            btn.innerText = "生成中...";
-            setTimeout(() => {
-                // scale: 2 是为了兼容 APK 运行环境，防止闪退
-                html2canvas(document.querySelector("#menu-canvas"), { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(canvas => {
-                    const link = document.createElement('a'); link.download = '价目表_' + Date.now() + '.png';
-                    link.href = canvas.toDataURL(); link.click(); btn.innerText = "保存为图片";
-                });
-            }, 200);
-        }
-    </script>
-</body>
-</html>
- class="c-btn" style="background:#eee" onclick="closeCommonModal()">取消</button>
                 <button class="c-btn" style="background:var(--add-color);color:white" id="modal-confirm-btn">确定</button>
             </div>
         </div>
