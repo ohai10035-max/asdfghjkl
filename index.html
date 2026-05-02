@@ -321,7 +321,7 @@
             btn.innerText = "生成中...";
             setTimeout(() => {
                 // scale: 2 是为了兼容 APK 运行环境，防止闪退
-                html2canvas(document.querySelector("#menu-canvas"), { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(canvas => {
+                html2canvas(document.querySelector("#menu-canvas"), { backgroundColor: "#ffffff", scale: 3, useCORS: true }).then(canvas => {
                     const link = document.createElement('a'); link.download = '价目表_' + Date.now() + '.png';
                     link.href = canvas.toDataURL(); link.click(); btn.innerText = "保存为图片";
                 });
