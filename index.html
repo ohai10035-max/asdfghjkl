@@ -45,7 +45,6 @@
         header h1 { font-size: 18px; font-weight: 300; letter-spacing: 4px; outline: none; }
         header p { font-size: 9px; color: var(--text-light); letter-spacing: 2px; margin-top: 5px; outline: none; }
 
-        /* 找回：店主介绍 */
         .intro-box { margin-bottom: 35px; }
         .intro-title { font-size: 11px; font-weight: 600; margin-bottom: 5px; outline: none; }
         .intro-text { font-size: 10px; color: var(--text-light); line-height: 1.6; outline: none; }
@@ -73,12 +72,10 @@
         .price-val { font-size: 11px; font-weight: 500; outline: none; }
         .price-sub { font-size: 9px; color: var(--accent-color); outline: none; margin-top: 1px; }
 
-        /* 找回：碎碎念模块 */
         .benefit-box { margin-top: auto; padding-top: 30px; border-top: 1px dashed #eee; }
         .benefit-title { font-size: 10px; font-weight: 600; margin-bottom: 8px; outline: none; color: var(--accent-color); }
         .benefit-content { font-size: 9px; color: var(--text-light); line-height: 1.8; outline: none; }
 
-        /* 控制台与开关 */
         .controls-dock {
             position: fixed; bottom: 30px; background: #222; padding: 10px 20px;
             border-radius: 50px; display: flex; align-items: center; gap: 12px;
@@ -99,7 +96,6 @@
 
         .c-btn { background: white; color: #222; border: none; padding: 8px 14px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: bold; }
 
-        /* 统一美化弹窗 */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;
@@ -123,7 +119,7 @@
         .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
     </style>
 </head>
-<body class="edit-on">
+<body>
 
     <div id="menu-canvas">
         <header>
@@ -133,7 +129,7 @@
 
         <div class="intro-box">
             <div class="intro-title" contenteditable="true">ABOUT ME / 店主介绍</div>
-            <div class="intro-text" contenteditable="true">这里是雨花的小店，点击开关即可进入编辑模式OvO。</div>
+            <div class="intro-text" contenteditable="true">这里是雨花的小店。</div>
         </div>
 
         <div id="list-root">
@@ -155,7 +151,7 @@
                         </div>
                         <div class="price-info">
                             <div class="price-val" contenteditable="true">自定义价格</div>
-                            <div class="price-sub" contenteditable="true">自定义优惠价格（删除里面的字就不显示）</div>
+                            <div class="price-sub" contenteditable="true">自定义优惠价格</div>
                         </div>
                     </div>
                 </div>
@@ -175,7 +171,7 @@
     <div class="controls-dock">
         <div class="switch-wrap">
             编辑
-            <input type="checkbox" id="editToggle" class="toggle-input" checked onchange="handleModeChange()">
+            <input type="checkbox" id="editToggle" class="toggle-input" onchange="handleModeChange()">
         </div>
         <button class="c-btn edit-only" onclick="addNewCat()">+分类</button>
         <button class="c-btn" onclick="toggleFontModal()">字体管理</button>
@@ -211,7 +207,6 @@
         dbReq.onupgradeneeded = e => e.target.result.createObjectStore("fonts", {keyPath:"id"});
         dbReq.onsuccess = e => { db = e.target.result; refreshFontPool(); };
 
-        // 核心热插拔逻辑
         async function registerFontFace(id, dataUrl) {
             try {
                 const font = new FontFace(id, `url(${dataUrl})`, { display: 'swap' });
@@ -264,7 +259,6 @@
             reader.readAsDataURL(file);
         }
 
-        // --- 美化版弹窗交互 ---
         function showModal(title, contentHtml, onConfirm) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-content').innerHTML = contentHtml;
@@ -290,7 +284,7 @@
 
         function confirmDelete(id, e) {
             e.stopPropagation();
-            const html = `<div class="modal-tip">确定要删除这个字体吗？此操作无法撤销。</div>`;
+            const html = `<div class="modal-tip">确定要删除这个字体吗？</div>`;
             showModal("确认删除", html, () => {
                 const tx = db.transaction("fonts", "readwrite");
                 tx.objectStore("fonts").delete(id);
@@ -304,8 +298,8 @@
             m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
         }
 
-        // --- 找回的业务逻辑 ---
         function handleModeChange() { document.body.classList.toggle('edit-on', document.getElementById('editToggle').checked); }
+        
         function addNewCat() {
             const root = document.getElementById('list-root');
             const div = document.createElement('div');
@@ -320,12 +314,14 @@
             div.innerHTML = `<span class="row-del-mark edit-only" onclick="this.parentElement.remove()">×</span><div class="item-content"><span class="item-title" contenteditable="true">新商品项目</span><span class="item-desc" contenteditable="true">描述内容</span></div><div class="price-info"><div class="price-val" contenteditable="true">¥0</div><div class="price-sub" contenteditable="true">会员 ¥0</div></div>`;
             container.appendChild(div);
         }
+
         function exportImg() {
             document.getElementById('editToggle').checked = false; handleModeChange();
             const btn = document.querySelector('.save-btn');
             btn.innerText = "生成中...";
             setTimeout(() => {
-                html2canvas(document.querySelector("#menu-canvas"), { backgroundColor: "#ffffff", scale: 3, useCORS: true }).then(canvas => {
+                // scale: 2 是为了兼容 APK 运行环境，防止闪退
+                html2canvas(document.querySelector("#menu-canvas"), { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(canvas => {
                     const link = document.createElement('a'); link.download = '价目表_' + Date.now() + '.png';
                     link.href = canvas.toDataURL(); link.click(); btn.innerText = "保存为图片";
                 });
